@@ -1,41 +1,35 @@
-class GitCommit < ActiveRecord::Base
-  belongs_to :issue_repository
-  belongs_to :issue
+# GitCommit ist jetzt ein einfaches Datenobjekt ohne ActiveRecord
+class GitCommit
+  attr_accessor :sha, :message, :commit_url, :author_name, :author_email, :branch, :committed_at, :issue_repository
   
-  validates :sha, presence: true, uniqueness: { scope: :issue_repository_id }
-  validates :message, presence: true
-  validates :commit_url, presence: true
-  validates :author_name, presence: true
-  validates :author_email, presence: true
-  
-  scope :recent, -> { order(committed_at: :desc) }
-  
-  # Findet oder erstellt einen Commit
-  def self.find_or_create_from_webhook(issue_repository, commit_data, repository_data)
-    commit = find_or_initialize_by(
-      sha: commit_data[:id],
-      issue_repository_id: issue_repository.id
-    )
-    
-    was_new = commit.new_record?
-    
-    commit.assign_attributes(
-      issue_id: issue_repository.issue_id,
-      message: commit_data[:message],
-      commit_url: commit_data[:url],
-      author_name: commit_data[:author][:name],
-      author_email: commit_data[:author][:email],
-      branch: extract_branch(repository_data[:ref]),
-      committed_at: parse_timestamp(commit_data[:timestamp])
-    )
-    
-    commit.save
-    commit.instance_variable_set(:@was_new_record, was_new)
-    commit
+  def initialize(attributes = {})
+    attributes.each do |key, value|
+      send("#{key}=", value) if respond_to?("#{key}=")
+    end
   end
   
-  def was_new_record?
-    @was_new_record == true
+  def self.from_github_api(commit_data, branch = nil)
+    new(
+      sha: commit_data[:sha] || commit_data['sha'],
+      message: commit_data[:commit][:message] || commit_data['commit']['message'],
+      commit_url: commit_data[:html_url] || commit_data['html_url'],
+      author_name: commit_data[:commit][:author][:name] || commit_data['commit']['author']['name'],
+      author_email: commit_data[:commit][:author][:email] || commit_data['commit']['author']['email'],
+      branch: branch,
+      committed_at: parse_timestamp(commit_data[:commit][:author][:date] || commit_data['commit']['author']['date'])
+    )
+  end
+  
+  def self.from_webhook(commit_data, repository_data)
+    new(
+      sha: commit_data[:id] || commit_data['id'],
+      message: commit_data[:message] || commit_data['message'],
+      commit_url: commit_data[:url] || commit_data['url'],
+      author_name: commit_data[:author][:name] || commit_data['author']['name'],
+      author_email: commit_data[:author][:email] || commit_data['author']['email'],
+      branch: extract_branch(repository_data[:ref] || repository_data['ref']),
+      committed_at: parse_timestamp(commit_data[:timestamp] || commit_data['timestamp'])
+    )
   end
   
   def self.extract_branch(ref)
@@ -47,5 +41,8 @@ class GitCommit < ActiveRecord::Base
     return Time.current unless timestamp_str
     Time.parse(timestamp_str) rescue Time.current
   end
+  
+  def short_sha
+    sha[0..7] if sha
+  end
 end
-

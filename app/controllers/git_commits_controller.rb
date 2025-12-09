@@ -3,11 +3,19 @@ class GitCommitsController < ApplicationController
   before_action :authorize
   
   def index
-    @repositories = @issue.issue_repositories.includes(:git_commits)
-    @commits = GitCommit.where(issue_id: @issue.id)
-                       .includes(:issue_repository)
-                       .recent
-                       .limit(100)
+    @repositories = @issue.issue_repositories
+    @commits = []
+    
+    # Sammle Commits von allen verknüpften Repositories
+    @repositories.each do |repo|
+      repo_commits = repo.fetch_commits(100)
+      repo_commits.each { |c| c.issue_repository = repo }
+      @commits.concat(repo_commits)
+    end
+    
+    # Sortiere nach Datum (neueste zuerst)
+    @commits.sort_by! { |c| c.committed_at || Time.at(0) }.reverse!
+    @commits = @commits.first(100) # Limit auf 100
   end
   
   private

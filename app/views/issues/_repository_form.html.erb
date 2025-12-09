@@ -17,7 +17,7 @@
             <tr>
               <td><%= repo.repository_name %></td>
               <td><%= link_to repo.repository_url, repo.repository_url, target: '_blank' %></td>
-              <td><%= repo.git_commits.count %></td>
+              <td>-</td>
               <td class="buttons">
                 <%= link_to l(:button_delete), 
                     issue_repository_path(@issue, repo), 
@@ -47,6 +47,11 @@
           <%= f.label :webhook_secret, l(:field_webhook_secret) %>
           <%= f.password_field :webhook_secret, size: 40, placeholder: 'Optional: Webhook Secret' %>
           <em class="info"><%= l(:text_webhook_secret_hint) %></em>
+        </p>
+        <p>
+          <%= f.label :github_token, l(:field_github_token) %>
+          <%= f.password_field :github_token, size: 40, placeholder: 'Optional: GitHub Token für private Repos' %>
+          <em class="info"><%= l(:text_github_token_hint) %></em>
         </p>
         <p>
           <%= submit_tag l(:button_add) %>

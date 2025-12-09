@@ -1,6 +1,5 @@
 class IssueRepository < ActiveRecord::Base
   belongs_to :issue
-  has_many :git_commits, dependent: :destroy
   
   validates :repository_url, presence: true, format: { with: /\Ahttps?:\/\/.+\z/, message: "muss eine gültige URL sein" }
   validates :repository_name, presence: true
@@ -21,5 +20,18 @@ class IssueRepository < ActiveRecord::Base
     return nil unless info
     "#{info[:owner]}/#{info[:repo]}"
   end
+  
+  # Ruft Commits direkt von GitHub API ab
+  def fetch_commits(limit = 100)
+    return [] unless github_owner_and_repo
+    
+    info = github_owner_and_repo
+    token = github_token.presence || ENV['GITHUB_API_TOKEN']
+    GithubCommits::ApiClient.new(token).fetch_commits(info[:owner], info[:repo], limit)
+  rescue => e
+    Rails.logger.error "Failed to fetch commits: #{e.message}"
+    []
+  end
 end
+
 

@@ -18,6 +18,7 @@ de:
   field_repository_url: "Repository URL"
   field_repository_name: "Repository Name"
   field_webhook_secret: "Webhook Secret"
+  field_github_token: "GitHub Token"
   field_commit_sha: "SHA"
   field_commit_message: "Nachricht"
   field_author: "Autor"
@@ -27,6 +28,7 @@ de:
   
   text_repository_url_hint: "Geben Sie die vollständige GitHub Repository URL ein (z.B., https://github.com/owner/repo)"
   text_webhook_secret_hint: "Optional: Repository-spezifisches Webhook Secret. Falls nicht gesetzt, wird GITHUB_SECRET_TOKEN verwendet."
+  text_github_token_hint: "Optional: GitHub Personal Access Token für den Zugriff auf private Repositories. Falls nicht gesetzt, wird GITHUB_API_TOKEN verwendet."
   
   button_add: "Hinzufügen"
   button_delete: "Löschen"

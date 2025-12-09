@@ -23,7 +23,7 @@
         <% @commits.each do |commit| %>
           <tr>
             <td class="sha">
-              <%= link_to commit.sha[0..7], commit.commit_url, target: '_blank', class: 'commit-sha' %>
+              <%= link_to commit.short_sha, commit.commit_url, target: '_blank', class: 'commit-sha' %>
             </td>
             <td class="message">
               <%= link_to truncate(commit.message, length: 80), commit.commit_url, target: '_blank', title: commit.message %>
@@ -37,12 +37,14 @@
               <%= commit.branch if commit.branch.present? %>
             </td>
             <td class="repository">
-              <%= link_to commit.issue_repository.repository_name, 
-                          commit.issue_repository.repository_url, 
-                          target: '_blank' %>
+              <% if commit.issue_repository %>
+                <%= link_to commit.issue_repository.repository_name, 
+                            commit.issue_repository.repository_url, 
+                            target: '_blank' %>
+              <% end %>
             </td>
             <td class="date">
-              <%= format_time(commit.committed_at) %>
+              <%= format_time(commit.committed_at) if commit.committed_at %>
             </td>
           </tr>
         <% end %>
@@ -60,7 +62,6 @@
       <% @repositories.each do |repo| %>
         <li>
           <%= link_to repo.repository_name, repo.repository_url, target: '_blank' %>
-          <span class="count">(<%= repo.git_commits.count %>)</span>
         </li>
       <% end %>
     </ul>

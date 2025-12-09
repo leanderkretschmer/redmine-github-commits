@@ -103,12 +103,8 @@ class GithubCommitsController < ApplicationController
   end
 
   def process_commit_for_repository(issue_repository, commit_data, repository_data)
-    commit = GitCommit.find_or_create_from_webhook(issue_repository, commit_data, repository_data)
-    
-    # Erstelle optional einen Journal-Eintrag
-    if commit.persisted? && commit.was_new_record?
-      create_journal_entry(issue_repository.issue, commit)
-    end
+    commit = GitCommit.from_webhook(commit_data, repository_data)
+    create_journal_entry(issue_repository.issue, commit)
   end
 
   def process_commit_with_pattern(commit_data, repository_data)
@@ -128,11 +124,8 @@ class GithubCommitsController < ApplicationController
       repo.repository_name = repository_data[:name] || repository_data[:full_name]
     end
     
-    commit = GitCommit.find_or_create_from_webhook(issue_repo, commit_data, repository_data)
-    
-    if commit.persisted? && commit.was_new_record?
-      create_journal_entry(issue, commit)
-    end
+    commit = GitCommit.from_webhook(commit_data, repository_data)
+    create_journal_entry(issue, commit)
   end
 
   def create_journal_entry(issue, commit)
@@ -143,7 +136,7 @@ class GithubCommitsController < ApplicationController
               author: commit.author_name, 
               branch: commit.branch, 
               message: commit.message, 
-              commit_id: commit.sha[0..7],
+              commit_id: commit.short_sha,
               commit_url: commit.commit_url)
     
     issue.init_journal(user, notes)

@@ -37,7 +37,7 @@ class IssueRepositoriesController < ApplicationController
   end
   
   def repository_params
-    params.require(:issue_repository).permit(:repository_url, :repository_name, :webhook_secret)
+    params.require(:issue_repository).permit(:repository_url, :repository_name, :webhook_secret, :github_token)
   end
 end
 

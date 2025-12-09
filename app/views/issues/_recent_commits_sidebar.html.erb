@@ -1,5 +1,15 @@
 <% if @issue.present? && @issue.issue_repositories.any? %>
-  <% commits = GitCommit.where(issue_id: @issue.id).recent.limit(10) %>
+  <% 
+    # Lade Commits direkt von GitHub
+    commits = []
+    @issue.issue_repositories.each do |repo|
+      repo_commits = repo.fetch_commits(10)
+      repo_commits.each { |c| c.issue_repository = repo }
+      commits.concat(repo_commits)
+    end
+    commits.sort_by! { |c| c.committed_at || Time.at(0) }.reverse!
+    commits = commits.first(10)
+  %>
   <% if commits.any? %>
     <div id="github-commits-sidebar" style="margin-top: 15px;">
       <h3><%= l(:label_recent_commits) %></h3>
@@ -14,9 +24,9 @@
               class: 'commit-link'
             ) %>
             <span class="commit-meta">
-              <%= link_to(commit.sha[0..7], commit.commit_url, target: '_blank', class: 'commit-sha') %>
+              <%= link_to(commit.short_sha, commit.commit_url, target: '_blank', class: 'commit-sha') %>
               - <%= commit.author_name %>
-              - <%= format_time(commit.committed_at) %>
+              - <%= format_time(commit.committed_at) if commit.committed_at %>
             </span>
           </li>
         <% end %>

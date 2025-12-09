@@ -3,7 +3,6 @@ module GithubCommits
     def self.included(base)
       base.class_eval do
         has_many :issue_repositories, dependent: :destroy, class_name: 'IssueRepository'
-        has_many :git_commits, dependent: :destroy, class_name: 'GitCommit'
       end
     end
   end

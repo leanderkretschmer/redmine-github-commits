@@ -14,4 +14,5 @@ Rails.configuration.to_prepare do
   require_dependency 'issue_patch'
   require_dependency 'issue_repository'
   require_dependency 'git_commit'
+  require_dependency 'github_commits/api_client'
 end
