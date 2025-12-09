@@ -1,6 +1,11 @@
 # github_commits
 
-This plugin adds a comment in redmine issue whenever user commits to github with the redmine issue number in the commit message. We have created this plugin because it is very painful to keep track of all commits for an issue, and we just wanted to connect the github with our own Redmine. 
+This plugin adds a comment in redmine issue whenever user commits to github with the redmine issue number in the commit message. We have created this plugin because it is very painful to keep track of all commits for an issue, and we just wanted to connect the github with our own Redmine.
+
+## Compatibility
+
+- **Redmine 6.0+** (tested with Redmine 6.0.0 and Rails 7.2)
+- **Ruby 3.3+** 
 
 ## Steps to use this plugin:
 

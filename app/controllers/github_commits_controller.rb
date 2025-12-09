@@ -1,6 +1,4 @@
 class GithubCommitsController < ApplicationController
-  
-  unloadable
    
   skip_before_action :check_if_login_required
   skip_before_action :verify_authenticity_token
@@ -39,11 +37,8 @@ class GithubCommitsController < ApplicationController
                                       commit_id: last_commit[:id],
                                       commit_url: last_commit[:url])
           
-          issue.journals.create(journalized_id: issue_id, 
-                                journalized_type: REDMINE_JOURNALIZED_TYPE, 
-                                user: user, 
-                                notes: notes
-                               )
+          issue.init_journal(user, notes)
+          issue.save
           resp_json = {success: true}
         else
           resp_json = {success: false, error: t('lables.no_issue_found') }
@@ -62,13 +57,20 @@ class GithubCommitsController < ApplicationController
 
   def verify_signature?
     if request.env['HTTP_X_HUB_SIGNATURE'].blank? || ENV["GITHUB_SECRET_TOKEN"].blank?
-      render json: {success: false},status: 500
-    else
-      request.body.rewind
-      payload_body = request.body.read
-      signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), ENV["GITHUB_SECRET_TOKEN"], payload_body)
-      render json: {success: false},status: 500 unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE'])
+      render json: {success: false}, status: 500
+      return false
     end
+    
+    request.body.rewind
+    payload_body = request.body.read
+    signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), ENV["GITHUB_SECRET_TOKEN"], payload_body)
+    
+    unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE'])
+      render json: {success: false}, status: 500
+      return false
+    end
+    
+    true
   end
 
   private

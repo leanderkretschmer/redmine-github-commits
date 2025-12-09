@@ -9,7 +9,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
     @request.headers['CONTENT_TYPE'] = 'application/json'
     @request.headers['HTTP_ACCEPT'] = 'application/json'
     assert_no_difference('Journal.count') do 
-      post :create_comment, invalid_body
+      post :create_comment, params: invalid_body
     end
     assert_response :error 
   end
@@ -17,7 +17,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
   def test_create_comment_without_commit_data
     set_required_headers(invalid_body)
     assert_no_difference('Journal.count') do 
-      post :create_comment,invalid_body
+      post :create_comment, params: invalid_body
     end
     assert_response :success
     assert_equal JSON.parse(@response.body)['error'], I18n.translate('lables.no_commit_data_found')
@@ -28,7 +28,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
     new_valid_body[:commits][0][:message] = "Without issue number"
     set_required_headers(new_valid_body)
     assert_no_difference('Journal.count') do 
-      post :create_comment,new_valid_body
+      post :create_comment, params: new_valid_body
     end
     assert_equal JSON.parse(@response.body)['error'], I18n.translate('lables.no_issue_found')
     assert_response :success
@@ -39,7 +39,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
     new_valid_body[:commits][0][:message] = "invalid issue number #rm89070"
     set_required_headers(new_valid_body)
     assert_no_difference('Journal.count') do 
-      post :create_comment,new_valid_body
+      post :create_comment, params: new_valid_body
     end
     assert_response :success
     assert_equal JSON.parse(@response.body)['error'], I18n.translate('lables.no_issue_found')
@@ -50,7 +50,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
     new_valid_body[:commits][0][:message] = "empty issue number #rm fgfg"
     set_required_headers(new_valid_body)
     assert_no_difference('Journal.count') do 
-      post :create_comment,new_valid_body
+      post :create_comment, params: new_valid_body
     end
     assert_response :success
     assert_equal JSON.parse(@response.body)['error'], I18n.translate('lables.no_issue_found')
@@ -61,7 +61,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
     new_valid_body[:commits][0][:message] = "empty issue number #rmfgfg"
     set_required_headers(new_valid_body)
     assert_no_difference('Journal.count') do 
-      post :create_comment,new_valid_body
+      post :create_comment, params: new_valid_body
     end
     assert_response :success
     assert_equal JSON.parse(@response.body)['error'], I18n.translate('lables.no_issue_found')
@@ -72,7 +72,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
     new_valid_body[:commits][0][:author][:email] = email_addresses(:email_address_002).address
     set_required_headers(new_valid_body)
     assert_difference('Journal.count') do 
-      post :create_comment,new_valid_body
+      post :create_comment, params: new_valid_body
     end
     assert_response :success
     assert_equal JSON.parse(@response.body)['success'], true
@@ -84,7 +84,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
   def test_create_comment_without_existing_user_email
     set_required_headers(valid_body)
     assert_difference('Journal.count') do 
-      post :create_comment,valid_body
+      post :create_comment, params: valid_body
     end
     assert_response :success
     assert_equal JSON.parse(@response.body)['success'], true
@@ -98,7 +98,7 @@ class GithubCommitsControllerTest < ActionController::TestCase
     new_valid_body[:commits][0][:distinct] = false
     set_required_headers(new_valid_body)
     assert_no_difference('Journal.count') do 
-      post :create_comment, new_valid_body
+      post :create_comment, params: new_valid_body
     end
 
     assert_response :success
@@ -112,9 +112,10 @@ class GithubCommitsControllerTest < ActionController::TestCase
   end
 
   def set_required_headers(params)
+    payload_body = params.to_json
     @request.headers['HTTP_X_HUB_SIGNATURE'] = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), 
                                                               ENV["GITHUB_SECRET_TOKEN"], 
-                                                              params.to_query
+                                                              payload_body
                                                              ) if ENV["GITHUB_SECRET_TOKEN"].present?
     @request.headers['CONTENT_TYPE'] = 'application/json'
     @request.headers['HTTP_ACCEPT'] = 'application/json'
