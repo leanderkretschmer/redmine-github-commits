@@ -2,7 +2,10 @@ module GithubCommits
   module IssuePatch
     def self.included(base)
       base.class_eval do
-        has_many :issue_repositories, dependent: :destroy, class_name: 'IssueRepository'
+        # Keine ActiveRecord-Assoziation mehr, verwenden Custom Fields
+        def issue_repositories
+          IssueRepository.for_issue(self)
+        end
       end
     end
   end

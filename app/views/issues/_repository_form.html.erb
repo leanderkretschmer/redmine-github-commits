@@ -20,7 +20,7 @@
               <td>-</td>
               <td class="buttons">
                 <%= link_to l(:button_delete), 
-                    issue_repository_path(@issue, repo), 
+                    issue_repository_path(@issue, repo.repository_url), 
                     method: :delete,
                     data: { confirm: l(:text_are_you_sure) },
                     class: 'icon icon-delete' %>

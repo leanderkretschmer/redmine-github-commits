@@ -19,11 +19,8 @@ Ein Redmine-Plugin, das GitHub-Repositories mit Redmine-Tickets verknüpft und C
 ## Installation
 
 1. Kopieren Sie das Plugin-Verzeichnis nach `plugins/github_commits` in Ihrer Redmine-Installation
-2. Führen Sie die Migrationen aus:
-   ```bash
-   rake redmine:plugins:migrate RAILS_ENV=production
-   ```
-3. Starten Sie Redmine neu
+2. Starten Sie Redmine neu - **keine Migrationen erforderlich!**
+3. Das Plugin verwendet Redmine Custom Fields für die Speicherung (wird automatisch erstellt)
 
 ## Verwendung
 

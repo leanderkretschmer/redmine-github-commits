@@ -73,9 +73,20 @@ class GithubCommitsController < ApplicationController
     # Normalisiere URL (entferne .git, normalisiere Format)
     normalized_url = normalize_repository_url(repo_url)
     
-    IssueRepository.where("repository_url LIKE ? OR repository_url LIKE ?", 
-                         normalized_url, 
-                         normalized_url + ".git")
+    # Suche in allen Issues nach Repositories mit dieser URL
+    repos = []
+    Issue.joins(:custom_values).where(
+      "custom_values.value LIKE ?", 
+      "%#{normalized_url}%"
+    ).each do |issue|
+      issue.issue_repositories.each do |repo|
+        if repo.repository_url == normalized_url || repo.repository_url == normalized_url + ".git"
+          repos << repo
+        end
+      end
+    end
+    
+    repos
   end
   
   def normalize_repository_url(url)
@@ -95,11 +106,9 @@ class GithubCommitsController < ApplicationController
     return nil unless repo_url.present?
     
     normalized_url = normalize_repository_url(repo_url)
-    issue_repo = IssueRepository.where("repository_url LIKE ? OR repository_url LIKE ?", 
-                                       normalized_url, 
-                                       normalized_url + ".git").first
+    repos = find_repositories_by_url(normalized_url)
     
-    issue_repo&.webhook_secret
+    repos.first&.webhook_secret
   end
 
   def process_commit_for_repository(issue_repository, commit_data, repository_data)
@@ -118,10 +127,17 @@ class GithubCommitsController < ApplicationController
     
     # Finde oder erstelle Repository-Verknüpfung für dieses Issue
     repo_url = repository_data[:url] || "#{GITHUB_URL}#{repository_data[:full_name]}"
-    issue_repo = issue.issue_repositories.find_or_create_by(
-      repository_url: normalize_repository_url(repo_url)
-    ) do |repo|
-      repo.repository_name = repository_data[:name] || repository_data[:full_name]
+    normalized_url = normalize_repository_url(repo_url)
+    
+    issue_repo = issue.issue_repositories.find { |r| r.repository_url == normalized_url }
+    
+    unless issue_repo
+      issue_repo = IssueRepository.new(
+        issue: issue,
+        repository_url: normalized_url,
+        repository_name: repository_data[:name] || repository_data[:full_name]
+      )
+      issue_repo.save
     end
     
     commit = GitCommit.from_webhook(commit_data, repository_data)
