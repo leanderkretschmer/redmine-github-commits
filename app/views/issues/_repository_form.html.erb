@@ -1,0 +1,58 @@
+<% if @issue.editable? %>
+  <div id="github-repositories" style="margin-top: 15px;">
+    <h3><%= l(:label_repositories) %></h3>
+    
+    <% if @issue.issue_repositories.any? %>
+      <table class="list">
+        <thead>
+          <tr>
+            <th><%= l(:field_repository_name) %></th>
+            <th><%= l(:field_repository_url) %></th>
+            <th><%= l(:label_commits_count) %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @issue.issue_repositories.each do |repo| %>
+            <tr>
+              <td><%= repo.repository_name %></td>
+              <td><%= link_to repo.repository_url, repo.repository_url, target: '_blank' %></td>
+              <td><%= repo.git_commits.count %></td>
+              <td class="buttons">
+                <%= link_to l(:button_delete), 
+                    issue_repository_path(@issue, repo), 
+                    method: :delete,
+                    data: { confirm: l(:text_are_you_sure) },
+                    class: 'icon icon-delete' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+    
+    <fieldset>
+      <legend><%= l(:label_add_repository) %></legend>
+      <%= form_for [@issue, IssueRepository.new], url: issue_repositories_path(@issue) do |f| %>
+        <p>
+          <%= f.label :repository_url, l(:field_repository_url) + ' *' %>
+          <%= f.text_field :repository_url, size: 60, placeholder: 'https://github.com/owner/repo', required: true %>
+          <em class="info"><%= l(:text_repository_url_hint) %></em>
+        </p>
+        <p>
+          <%= f.label :repository_name, l(:field_repository_name) + ' *' %>
+          <%= f.text_field :repository_name, size: 40, placeholder: 'Repository Name', required: true %>
+        </p>
+        <p>
+          <%= f.label :webhook_secret, l(:field_webhook_secret) %>
+          <%= f.password_field :webhook_secret, size: 40, placeholder: 'Optional: Webhook Secret' %>
+          <em class="info"><%= l(:text_webhook_secret_hint) %></em>
+        </p>
+        <p>
+          <%= submit_tag l(:button_add) %>
+        </p>
+      <% end %>
+    </fieldset>
+  </div>
+<% end %>
+

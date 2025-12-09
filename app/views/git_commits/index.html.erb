@@ -1,0 +1,69 @@
+<% html_title l(:label_git_commits) %>
+
+<div class="contextual">
+  <%= link_to l(:label_back_to_issue), issue_path(@issue), class: 'icon icon-cancel' %>
+</div>
+
+<h2><%= l(:label_git_commits) %></h2>
+
+<% if @commits.any? %>
+  <div class="autoscroll">
+    <table class="list commits">
+      <thead>
+        <tr>
+          <th><%= l(:field_commit_sha) %></th>
+          <th><%= l(:field_commit_message) %></th>
+          <th><%= l(:field_author) %></th>
+          <th><%= l(:field_branch) %></th>
+          <th><%= l(:field_repository) %></th>
+          <th><%= l(:field_date) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @commits.each do |commit| %>
+          <tr>
+            <td class="sha">
+              <%= link_to commit.sha[0..7], commit.commit_url, target: '_blank', class: 'commit-sha' %>
+            </td>
+            <td class="message">
+              <%= link_to truncate(commit.message, length: 80), commit.commit_url, target: '_blank', title: commit.message %>
+            </td>
+            <td class="author">
+              <%= commit.author_name %>
+              <br>
+              <span class="email"><%= commit.author_email %></span>
+            </td>
+            <td class="branch">
+              <%= commit.branch if commit.branch.present? %>
+            </td>
+            <td class="repository">
+              <%= link_to commit.issue_repository.repository_name, 
+                          commit.issue_repository.repository_url, 
+                          target: '_blank' %>
+            </td>
+            <td class="date">
+              <%= format_time(commit.committed_at) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>
+
+<% content_for :sidebar do %>
+  <% if @repositories.any? %>
+    <h3><%= l(:label_repositories) %></h3>
+    <ul>
+      <% @repositories.each do |repo| %>
+        <li>
+          <%= link_to repo.repository_name, repo.repository_url, target: '_blank' %>
+          <span class="count">(<%= repo.git_commits.count %>)</span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>
+

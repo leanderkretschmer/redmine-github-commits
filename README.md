@@ -1,22 +1,96 @@
 # github_commits
 
-This plugin adds a comment in redmine issue whenever user commits to github with the redmine issue number in the commit message. We have created this plugin because it is very painful to keep track of all commits for an issue, and we just wanted to connect the github with our own Redmine.
+Ein Redmine-Plugin, das GitHub-Repositories mit Redmine-Tickets verknüpft und Commits automatisch verfolgt. Das Plugin ermöglicht es, in jedem Ticket ein Git-Repository zu verlinken und zeigt alle zugehörigen Commits in einem eigenen Git-Tab an.
 
-## Compatibility
+## Kompatibilität
 
-- **Redmine 6.0+** (tested with Redmine 6.0.0 and Rails 7.2)
-- **Ruby 3.3+** 
+- **Redmine 6.0+** (getestet mit Redmine 6.0.0 und Rails 7.2)
+- **Ruby 3.3+**
 
-## Steps to use this plugin:
+## Features
 
-1. When user commits on github, the commit message should include `#rm123` where `123` should be the issue_id in redmine for which the commit is pushed. for eg : `git commit -m 'user signup - #rm123'`
+- **Repository-Verknüpfung pro Ticket**: Jedes Ticket kann ein oder mehrere Git-Repositories verlinken
+- **Git-Tab**: Neuer Tab "Git" im Ticket-View (neben "Historie" und "Eigenschaftsänderungen") zeigt alle Commits
+- **Sidebar-Anzeige**: Letzte Commits werden in der Sidebar neben den Kommentaren angezeigt
+- **Webhook-Unterstützung**: Unterstützt GitHub Webhooks für automatische Commit-Verarbeitung
+- **Private Repositories**: Unterstützt private Repositories mit Repository-spezifischen Webhook-Secrets
+- **Rückwärtskompatibel**: Unterstützt weiterhin das `#rm123` Pattern in Commit-Nachrichten
 
-2. User who pushes commit on github, should have the same email address which is used as redmine user also. It will add comment on behalf of the original user or admin user.
+## Installation
 
-3. Configure the environment variable `GITHUB_SECRET_TOKEN` when you run Redmine and also use the same token while creating a webhook on github.
+1. Kopieren Sie das Plugin-Verzeichnis nach `plugins/github_commits` in Ihrer Redmine-Installation
+2. Führen Sie die Migrationen aus:
+   ```bash
+   rake redmine:plugins:migrate RAILS_ENV=production
+   ```
+3. Starten Sie Redmine neu
 
-4. Github -> Repo setting –> webhook –> In event, select "send me everything" or you can select "Let me select individual events" and inside check the checkbox for commit event and then create web hook.
+## Verwendung
 
-5. For repository, webhook should be created with payload-url as `localhost:3000/github_commits/create_comment.json` where in url replace `localhost:3000` with your host address.
+### Repository-Verknüpfung
 
-6. In Redmine, Go to Administration -> Settings -> General Tab and change text formatting to `Markdown`. This will show the comment message properly.
+1. Öffnen Sie ein Ticket
+2. Scrollen Sie nach unten zum Bereich "Repositories"
+3. Geben Sie die Repository-URL ein (z.B. `https://github.com/owner/repo`)
+4. Geben Sie optional ein Repository-spezifisches Webhook Secret ein
+5. Klicken Sie auf "Hinzufügen"
+
+### GitHub Webhook einrichten
+
+1. Gehen Sie zu Ihrem GitHub-Repository → Settings → Webhooks
+2. Klicken Sie auf "Add webhook"
+3. **Payload URL**: `https://ihre-redmine-domain.com/github_commits/create_comment.json`
+4. **Content type**: `application/json`
+5. **Secret**: Verwenden Sie entweder:
+   - Das globale `GITHUB_SECRET_TOKEN` (Umgebungsvariable), ODER
+   - Das Repository-spezifische Secret (wenn im Ticket gesetzt)
+6. **Events**: Wählen Sie "Just the push event" oder "Send me everything"
+7. Klicken Sie auf "Add webhook"
+
+### Commit-Verarbeitung
+
+Das Plugin verarbeitet Commits auf zwei Arten:
+
+1. **Repository-basiert**: Wenn ein Repository mit einem Ticket verknüpft ist, werden alle Commits zu diesem Repository automatisch dem Ticket zugeordnet
+2. **Pattern-basiert**: Commits mit `#rm123` in der Nachricht werden dem entsprechenden Ticket zugeordnet (rückwärtskompatibel)
+
+### Git-Tab
+
+- Der Git-Tab erscheint automatisch, sobald ein Repository verknüpft ist oder Commits vorhanden sind
+- Zeigt alle Commits mit SHA, Nachricht, Autor, Branch und Datum
+- Commits sind anklickbar und führen direkt zur GitHub-Seite des Commits
+
+### Sidebar
+
+- Die letzten 10 Commits werden automatisch in der Sidebar angezeigt
+- Klicken Sie auf "Alle Commits anzeigen" um zum Git-Tab zu gelangen
+
+## Konfiguration
+
+### Umgebungsvariable (optional)
+
+Setzen Sie `GITHUB_SECRET_TOKEN` als globale Fallback-Option für Webhook-Verifizierung:
+
+```bash
+export GITHUB_SECRET_TOKEN="ihr-secret-token"
+```
+
+## Migration von alter Version
+
+Wenn Sie von einer älteren Version migrieren:
+
+1. Führen Sie die Migrationen aus: `rake redmine:plugins:migrate`
+2. Bestehende Commits mit `#rm123` Pattern funktionieren weiterhin
+3. Sie können nun zusätzlich Repositories direkt verlinken
+
+## Entwicklung
+
+### Tests ausführen
+
+```bash
+rake redmine:plugins:test:functionals RAILS_ENV=test
+```
+
+## Lizenz
+
+Siehe LICENSE-Datei

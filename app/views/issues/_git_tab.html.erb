@@ -1,0 +1,11 @@
+<% if @issue.present? && (@issue.issue_repositories.any? || GitCommit.where(issue_id: @issue.id).exists?) %>
+  <% commits_count = GitCommit.where(issue_id: @issue.id).count %>
+  <li>
+    <%= link_to(
+      l(:label_git_commits) + (commits_count > 0 ? " (#{commits_count})" : ""),
+      issue_git_commits_path(@issue),
+      class: 'git-commits-tab'
+    ) %>
+  </li>
+<% end %>
+

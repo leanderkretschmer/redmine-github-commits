@@ -6,67 +6,59 @@ class GithubCommitsController < ApplicationController
   before_action :verify_signature?
   
   GITHUB_URL = "https://github.com/"
-  REDMINE_JOURNALIZED_TYPE = "Issue"
   REDMINE_ISSUE_NUMBER_PREFIX = "#rm"
 
   def create_comment
     resp_json = nil
-    if params[:commits].present?
+    
+    unless params[:commits].present? && params[:repository].present?
+      return render json: {success: false, error: t('lables.no_commit_data_found')}, status: :ok
+    end
+    
+    repository_data = {
+      name: params[:repository][:name],
+      full_name: params[:repository][:full_name],
+      url: params[:repository][:html_url] || params[:repository][:url],
+      ref: params[:ref]
+    }
+    
+    # Finde verknüpfte Repositories basierend auf der Repository-URL
+    issue_repositories = find_repositories_by_url(repository_data[:url])
+    
+    params[:commits].each do |commit_data|
+      next unless commit_data[:distinct] == true # Nur neue Commits
       
-      repository_name = params[:repository][:name]
-      branch = params[:ref].split("/").last
-      
-      params[:commits].each do |last_commit|
-        message = last_commit[:message]
-
-        if message.present? && is_commit_to_be_tracked?(last_commit)         
-          issue_id = message.partition(REDMINE_ISSUE_NUMBER_PREFIX).last.split(" ").first.to_i
-          issue = Issue.find_by(id: issue_id)
-        end
-
-        if last_commit.present? && issue.present?
-
-          email = EmailAddress.find_by(address: last_commit[:author][:email])
-          user = email.present? ? email.user : User.where(admin: true).first
-          
-          author = last_commit[:author][:name]
-          
-          notes = t('commit.message', author: author, 
-                                      branch: branch, 
-                                      message: message, 
-                                      commit_id: last_commit[:id],
-                                      commit_url: last_commit[:url])
-          
-          issue.init_journal(user, notes)
-          issue.save
-          resp_json = {success: true}
-        else
-          resp_json = {success: false, error: t('lables.no_issue_found') }
-        end
+      # 1. Verarbeite Commits für verknüpfte Repositories
+      issue_repositories.each do |issue_repo|
+        process_commit_for_repository(issue_repo, commit_data, repository_data)
       end
       
-    else
-      resp_json = {success: false, error: t('lables.no_commit_data_found') }
+      # 2. Verarbeite Commits mit #rm123 Pattern (rückwärtskompatibel)
+      if commit_data[:message].present? && commit_data[:message].include?(REDMINE_ISSUE_NUMBER_PREFIX)
+        process_commit_with_pattern(commit_data, repository_data)
+      end
     end
-
-    respond_to do |format|
-      format.json { render json: resp_json, status: :ok }
-    end
-
+    
+    render json: {success: true}, status: :ok
   end
 
   def verify_signature?
-    if request.env['HTTP_X_HUB_SIGNATURE'].blank? || ENV["GITHUB_SECRET_TOKEN"].blank?
-      render json: {success: false}, status: 500
+    # Prüfe ob ein Repository-spezifisches Secret vorhanden ist
+    repository_secret = find_repository_secret_from_request
+    
+    secret_token = repository_secret || ENV["GITHUB_SECRET_TOKEN"]
+    
+    if request.env['HTTP_X_HUB_SIGNATURE'].blank? || secret_token.blank?
+      render json: {success: false, error: 'Invalid signature'}, status: 500
       return false
     end
     
     request.body.rewind
     payload_body = request.body.read
-    signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), ENV["GITHUB_SECRET_TOKEN"], payload_body)
+    signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), secret_token, payload_body)
     
     unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE'])
-      render json: {success: false}, status: 500
+      render json: {success: false, error: 'Invalid signature'}, status: 500
       return false
     end
     
@@ -75,8 +67,86 @@ class GithubCommitsController < ApplicationController
 
   private
 
-  def is_commit_to_be_tracked?(commit_obj)
-    commit_obj[:distinct] == true &&  #is it a fresh commit ?
-    commit_obj[:message].include?(REDMINE_ISSUE_NUMBER_PREFIX) #Does it include the redmine issue prefix string pattern?
+  def find_repositories_by_url(repo_url)
+    return [] unless repo_url.present?
+    
+    # Normalisiere URL (entferne .git, normalisiere Format)
+    normalized_url = normalize_repository_url(repo_url)
+    
+    IssueRepository.where("repository_url LIKE ? OR repository_url LIKE ?", 
+                         normalized_url, 
+                         normalized_url + ".git")
+  end
+  
+  def normalize_repository_url(url)
+    return nil unless url.present?
+    
+    # Entferne .git am Ende falls vorhanden
+    url = url.gsub(/\.git$/, '')
+    # Stelle sicher, dass es mit http:// oder https:// beginnt
+    url = "https://#{url}" unless url.match?(/\Ahttps?:\/\//)
+    url
+  end
+  
+  def find_repository_secret_from_request
+    return nil unless params[:repository].present?
+    
+    repo_url = params[:repository][:html_url] || params[:repository][:url]
+    return nil unless repo_url.present?
+    
+    normalized_url = normalize_repository_url(repo_url)
+    issue_repo = IssueRepository.where("repository_url LIKE ? OR repository_url LIKE ?", 
+                                       normalized_url, 
+                                       normalized_url + ".git").first
+    
+    issue_repo&.webhook_secret
+  end
+
+  def process_commit_for_repository(issue_repository, commit_data, repository_data)
+    commit = GitCommit.find_or_create_from_webhook(issue_repository, commit_data, repository_data)
+    
+    # Erstelle optional einen Journal-Eintrag
+    if commit.persisted? && commit.was_new_record?
+      create_journal_entry(issue_repository.issue, commit)
+    end
+  end
+
+  def process_commit_with_pattern(commit_data, repository_data)
+    message = commit_data[:message]
+    issue_id = message.partition(REDMINE_ISSUE_NUMBER_PREFIX).last.split(" ").first.to_i
+    
+    return if issue_id.zero?
+    
+    issue = Issue.find_by(id: issue_id)
+    return unless issue.present?
+    
+    # Finde oder erstelle Repository-Verknüpfung für dieses Issue
+    repo_url = repository_data[:url] || "#{GITHUB_URL}#{repository_data[:full_name]}"
+    issue_repo = issue.issue_repositories.find_or_create_by(
+      repository_url: normalize_repository_url(repo_url)
+    ) do |repo|
+      repo.repository_name = repository_data[:name] || repository_data[:full_name]
+    end
+    
+    commit = GitCommit.find_or_create_from_webhook(issue_repo, commit_data, repository_data)
+    
+    if commit.persisted? && commit.was_new_record?
+      create_journal_entry(issue, commit)
+    end
+  end
+
+  def create_journal_entry(issue, commit)
+    email = EmailAddress.find_by(address: commit.author_email)
+    user = email.present? ? email.user : User.where(admin: true).first
+    
+    notes = t('commit.message', 
+              author: commit.author_name, 
+              branch: commit.branch, 
+              message: commit.message, 
+              commit_id: commit.sha[0..7],
+              commit_url: commit.commit_url)
+    
+    issue.init_journal(user, notes)
+    issue.save
   end
 end

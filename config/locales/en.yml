@@ -5,3 +5,32 @@ en:
     no_issue_found: "Issue not found."
   commit:
     message: ! "__Github Commit__ - __%{author}__ has commited on __%{branch}__ branch with message: __%{message}__ , [%{commit_id}](%{commit_url})"
+  
+  label_repositories: "Repositories"
+  label_repository: "Repository"
+  label_add_repository: "Add Repository"
+  label_git_commits: "Git Commits"
+  label_recent_commits: "Recent Commits"
+  label_view_all_commits: "View all commits"
+  label_commits_count: "Commits"
+  label_no_data: "No data"
+  
+  field_repository_url: "Repository URL"
+  field_repository_name: "Repository Name"
+  field_webhook_secret: "Webhook Secret"
+  field_commit_sha: "SHA"
+  field_commit_message: "Message"
+  field_author: "Author"
+  field_branch: "Branch"
+  field_repository: "Repository"
+  field_date: "Date"
+  
+  text_repository_url_hint: "Enter the full GitHub repository URL (e.g., https://github.com/owner/repo)"
+  text_webhook_secret_hint: "Optional: Repository-specific webhook secret. If not set, GITHUB_SECRET_TOKEN will be used."
+  
+  button_add: "Add"
+  button_delete: "Delete"
+  label_back_to_issue: "Back to issue"
+  text_are_you_sure: "Are you sure?"
+  notice_successful_create: "Successfully created"
+  notice_successful_delete: "Successfully deleted"

@@ -1,0 +1,78 @@
+/* GitHub Commits Plugin Styles */
+
+.commit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.commit-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.commit-list li:last-child {
+  border-bottom: none;
+}
+
+.commit-link {
+  font-weight: bold;
+  color: #1856a3;
+  text-decoration: none;
+}
+
+.commit-link:hover {
+  text-decoration: underline;
+}
+
+.commit-sha {
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #666;
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.commit-meta {
+  display: block;
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 4px;
+}
+
+#github-commits-sidebar {
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+#github-commits-sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.1em;
+}
+
+table.commits td {
+  vertical-align: top;
+}
+
+table.commits td.sha {
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+table.commits td.message {
+  max-width: 300px;
+}
+
+table.commits td.author {
+  font-size: 0.9em;
+}
+
+table.commits td.author .email {
+  color: #888;
+  font-size: 0.85em;
+}
+

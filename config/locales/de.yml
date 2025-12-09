@@ -1,0 +1,37 @@
+# Deutsche Übersetzungen
+de:
+  lables:
+    no_commit_data_found: "Anfrage enthält keine Commit-Daten."
+    no_issue_found: "Ticket nicht gefunden."
+  commit:
+    message: ! "__Github Commit__ - __%{author}__ hat auf Branch __%{branch}__ mit Nachricht: __%{message}__ committet, [%{commit_id}](%{commit_url})"
+  
+  label_repositories: "Repositories"
+  label_repository: "Repository"
+  label_add_repository: "Repository hinzufügen"
+  label_git_commits: "Git Commits"
+  label_recent_commits: "Letzte Commits"
+  label_view_all_commits: "Alle Commits anzeigen"
+  label_commits_count: "Commits"
+  label_no_data: "Keine Daten"
+  
+  field_repository_url: "Repository URL"
+  field_repository_name: "Repository Name"
+  field_webhook_secret: "Webhook Secret"
+  field_commit_sha: "SHA"
+  field_commit_message: "Nachricht"
+  field_author: "Autor"
+  field_branch: "Branch"
+  field_repository: "Repository"
+  field_date: "Datum"
+  
+  text_repository_url_hint: "Geben Sie die vollständige GitHub Repository URL ein (z.B., https://github.com/owner/repo)"
+  text_webhook_secret_hint: "Optional: Repository-spezifisches Webhook Secret. Falls nicht gesetzt, wird GITHUB_SECRET_TOKEN verwendet."
+  
+  button_add: "Hinzufügen"
+  button_delete: "Löschen"
+  label_back_to_issue: "Zurück zum Ticket"
+  text_are_you_sure: "Sind Sie sicher?"
+  notice_successful_create: "Erfolgreich erstellt"
+  notice_successful_delete: "Erfolgreich gelöscht"
+

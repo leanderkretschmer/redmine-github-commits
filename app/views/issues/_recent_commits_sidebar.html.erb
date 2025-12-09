@@ -1,0 +1,28 @@
+<% if @issue.present? && @issue.issue_repositories.any? %>
+  <% commits = GitCommit.where(issue_id: @issue.id).recent.limit(10) %>
+  <% if commits.any? %>
+    <div id="github-commits-sidebar" style="margin-top: 15px;">
+      <h3><%= l(:label_recent_commits) %></h3>
+      <ul class="commit-list">
+        <% commits.each do |commit| %>
+          <li>
+            <%= link_to(
+              truncate(commit.message, length: 50),
+              commit.commit_url,
+              target: '_blank',
+              title: commit.message,
+              class: 'commit-link'
+            ) %>
+            <span class="commit-meta">
+              <%= link_to(commit.sha[0..7], commit.commit_url, target: '_blank', class: 'commit-sha') %>
+              - <%= commit.author_name %>
+              - <%= format_time(commit.committed_at) %>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+      <%= link_to(l(:label_view_all_commits), issue_git_commits_path(@issue), class: 'icon icon-git') %>
+    </div>
+  <% end %>
+<% end %>
+
